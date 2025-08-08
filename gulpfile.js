@@ -21,7 +21,7 @@ const path = {
     fonts: "src/fonts/**/*.*",
     js: "src/js/*.js",
     scss: "src/scss/**/*.scss",
-    images: "src/images/**/*.+(png|jpg|gif|svg)",
+    images: "src/images/**/*.+(png|jpg|gif|svg|pdf)",
     blur: "src/images/**/*.jpg",
   },
   build: {
