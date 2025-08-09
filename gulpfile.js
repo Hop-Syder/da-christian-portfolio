@@ -1,8 +1,3 @@
-/**
- * Gulpfile.js - Version corrigée avec gestion du contexte
- * @hopsyder - Fix JSON5 error by defining context variables
- */
-
 const { src, dest, watch, series, parallel } = require("gulp");
 const sass = require("gulp-sass")(require("sass"));
 const sourcemaps = require("gulp-sourcemaps");
@@ -11,12 +6,9 @@ const notify = require("gulp-notify");
 const fileinclude = require("gulp-file-include");
 const autoprefixer = require("gulp-autoprefixer");
 const bs = require("browser-sync").create();
-const del = require("del");
+const rimraf = require("rimraf");
 const uglify = require("gulp-uglify");
 const uglifycss = require("gulp-uglifycss");
-
-// Environment detection
-const isProduction = process.env.NODE_ENV === 'production' || process.env.VERCEL || process.env.CI;
 
 // Paths
 const path = {
@@ -38,21 +30,15 @@ const path = {
 };
 
 // Clean Distribution folder
-const clean = () => del(["./dist/**/*"]);
+const clean = (cb) => {
+  rimraf("./dist", cb);
+};
 
-// Error Message - Disable notifications in production
+// Error Message
 const customPlumber = (errTitle) => {
-  if (isProduction) {
-    return plumber({
-      errorHandler: (error) => {
-        console.error(`[${errTitle}] ${error.message}`);
-        process.exit(1);
-      }
-    });
-  }
-
   return plumber({
     errorHandler: notify.onError({
+      // Customizing error title
       title: errTitle || "Error running Gulp",
       message: "Error: <%= error.message %>",
       sound: "Glass",
@@ -60,21 +46,13 @@ const customPlumber = (errTitle) => {
   });
 };
 
-// HTML Task with proper context configuration
+// HTML Task: Generate HTML files with partials
 const html = () =>
   src(path.src.html)
     .pipe(customPlumber("Error Running html-include"))
     .pipe(
       fileinclude({
         basepath: path.src.incdir,
-        context: {
-          // @hopsyder - Define default context to prevent JSON5 errors
-          title: "Page Title",
-          breadcrumb: "Current Page",
-          // Add more context variables as needed
-          author: "Hop-Syder",
-          year: new Date().getFullYear()
-        }
       })
     )
     .pipe(dest(path.build.dir))
@@ -89,14 +67,8 @@ const scss = () =>
   src(path.src.scss)
     .pipe(customPlumber("Error Running Sass"))
     .pipe(sourcemaps.init())
-    .pipe(sass({
-      outputStyle: "expanded",
-      includePaths: ['node_modules']
-    }).on("error", sass.logError))
-    .pipe(autoprefixer({
-      overrideBrowserslist: ['last 2 versions'],
-      cascade: false
-    }))
+    .pipe(sass({ outputStyle: "expanded" }).on("error", sass.logError))
+    .pipe(autoprefixer())
     .pipe(sourcemaps.write("/maps"))
     .pipe(dest(path.build.dir + "css/"))
     .pipe(
@@ -109,18 +81,9 @@ const scssDev = () =>
   src(path.src.scss)
     .pipe(customPlumber("Error Running Sass"))
     .pipe(sourcemaps.init())
-    .pipe(sass({
-      outputStyle: "expanded",
-      includePaths: ['node_modules']
-    }).on("error", sass.logError))
-    .pipe(uglifycss({
-      maxLineLen: 80,
-      uglyComments: true
-    }))
-    .pipe(autoprefixer({
-      overrideBrowserslist: ['last 2 versions'],
-      cascade: false
-    }))
+    .pipe(sass({ outputStyle: "expanded" }).on("error", sass.logError))
+    .pipe(uglifycss({ maxLineLen: 80, uglyComments: true }))
+    .pipe(autoprefixer())
     .pipe(sourcemaps.write("/maps"))
     .pipe(dest(path.build.dir + "css/"))
     .pipe(
@@ -128,16 +91,11 @@ const scssDev = () =>
         stream: true,
       })
     );
-
 // Javascript task: generate theme script files
 const js = () =>
   src(path.src.js)
     .pipe(customPlumber("Error Running JS"))
-    .pipe(uglify({
-      compress: {
-        drop_console: isProduction
-      }
-    }))
+    .pipe(uglify())
     .pipe(dest(path.build.dir + "js/"))
     .pipe(
       bs.reload({
@@ -145,28 +103,44 @@ const js = () =>
       })
     );
 
-// Assets Tasks
+// Assets Tasks: copy assets(images,vendor,fonts etc) from source to destination
 const images = () =>
   src(path.src.images)
     .pipe(dest(path.build.dir + "images/"))
-    .pipe(bs.reload({ stream: true }));
+    .pipe(
+      bs.reload({
+        stream: true,
+      })
+    );
 
 const vendor = () =>
   src(path.src.vendor)
     .pipe(dest(path.build.dir + "vendor/"))
-    .pipe(bs.reload({ stream: true }));
+    .pipe(
+      bs.reload({
+        stream: true,
+      })
+    );
 
 const fonts = () =>
   src(path.src.fonts)
     .pipe(dest(path.build.dir + "fonts/"))
-    .pipe(bs.reload({ stream: true }));
+    .pipe(
+      bs.reload({
+        stream: true,
+      })
+    );
 
 const others = () =>
   src(path.src.others)
     .pipe(dest(path.build.dir))
-    .pipe(bs.reload({ stream: true }));
+    .pipe(
+      bs.reload({
+        stream: true,
+      })
+    );
 
-// Watch task - Only for development
+// Watch task
 const watchTask = () => {
   watch([path.src.html, path.src.htminc], series(html));
   watch(path.src.scss, series(scss));
@@ -177,7 +151,6 @@ const watchTask = () => {
   watch(path.src.others, series(others));
 };
 
-// Production build task
 exports.default = series(
   clean,
   html,
@@ -185,9 +158,7 @@ exports.default = series(
   parallel(images, vendor, fonts, others)
 );
 
-// Development task
 exports.dev = series(
-  clean,
   html,
   parallel(scss, js),
   parallel(images, vendor, fonts, others),
@@ -197,14 +168,6 @@ exports.dev = series(
         baseDir: path.build.dir,
       },
       port: 3050,
-      open: false,
     });
   })
 );
-
-// Individual tasks exports
-exports.clean = clean;
-exports.html = html;
-exports.scss = scss;
-exports.js = js;
-exports.images = images;

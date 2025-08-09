@@ -1,12 +1,9 @@
-<!-- 
-  @hopsyder - Page title component with default values
-  Fixed JSON5 parsing error by providing default values for variables
--->
 <header class="breadCrumb">
   <div class="svg-img">
     <img src="images/hero/figure-svg.svg" alt="" />
   </div>
   <div class="animate-shape">
+    <!-- <img src="images/skill/skill-background-shape.svg" alt="background-shape"> -->
     <svg
       xmlns="http://www.w3.org/2000/svg"
       xmlns:xlink="http://www.w3.org/1999/xlink"
@@ -40,13 +37,12 @@
   <div class="container">
     <div class="row">
       <div class="col-12 text-center">
-        <!-- @hopsyder: Use default values instead of undefined variables -->
-        <h3 class="breadCrumb__title">@@title@@</h3>
+        <h3 class="breadCrumb__title">@@title</h3>
         <nav aria-label="breadcrumb" class="d-flex justify-content-center">
           <ol class="breadcrumb align-items-center">
             <li class="breadcrumb-item"><a href="index.html">Accueil</a></li>
             <li class="breadcrumb-item active" aria-current="page">
-              @@breadcrumb@@
+              @@breadcrumb
             </li>
           </ol>
         </nav>
